@@ -13,7 +13,6 @@ def dict_fetch_all(cursor):
     ]
 
 
-# @csrf_exempt
 def get_user(request, id):
     conn = psycopg2.connect(database='mtaa', user='postgres',
                             password='postgres',
@@ -30,6 +29,7 @@ def get_user(request, id):
 
     return JsonResponse(rows[0], safe=False, status=200)
 
+
 def delete_user(request, id):
     if get_user(request, id).status_code is not 200:
         return HttpResponse("User not found", status=404)
@@ -44,6 +44,28 @@ def delete_user(request, id):
         conn.close()
     return HttpResponse("OK", status=200)
 
+
+@csrf_exempt
+def create_user(request):
+    if request.method == 'POST':
+
+        name = request.POST.get("username")
+        passw = request.POST.get("password")
+        mail = request.POST.get("email")
+
+        conn = psycopg2.connect(database='mtaa', user='postgres',
+                                password='postgres',
+                                host='localhost', port="5432")
+        print("Database opened successfully")
+        cur = conn.cursor()
+        cur.execute("INSERT INTO users(user_name, user_passw, user_mail) VALUES (\'{}\', \'{}\', \'{}\');".format(name, passw, mail))
+        conn.commit()
+        conn.close()
+        return HttpResponse("User created", status=201)
+    else:
+        return HttpResponse("Bad request", status=400)
+
+
 @csrf_exempt
 def handle_users(request, id):
     if not id.isnumeric():
@@ -53,4 +75,3 @@ def handle_users(request, id):
         return get_user(request, id)
     elif request.method == 'DELETE':
         return delete_user(request, id)
-
