@@ -1,7 +1,10 @@
+import json
+
 from django.shortcuts import render
 from django.http import JsonResponse, HttpResponse
 import psycopg2
 from django.views.decorators.csrf import csrf_exempt
+from django.http import QueryDict
 
 
 def dict_fetch_all(cursor):
@@ -58,12 +61,37 @@ def create_user(request):
                                 host='localhost', port="5432")
         print("Database opened successfully")
         cur = conn.cursor()
-        cur.execute("INSERT INTO users(user_name, user_passw, user_mail) VALUES (\'{}\', \'{}\', \'{}\');".format(name, passw, mail))
+        cur.execute(
+            "INSERT INTO users(user_name, user_passw, user_mail) VALUES (\'{}\', \'{}\', \'{}\');".format(name, passw,
+                                                                                                          mail))
         conn.commit()
         conn.close()
         return HttpResponse("User created", status=201)
     else:
         return HttpResponse("Bad request", status=400)
+
+
+def update_user(request, id):
+    if get_user(request, id).status_code is not 200:
+        return HttpResponse("User not found", status=404)
+
+    name = request.GET.get("username")
+    passw = request.GET.get("password")
+    mail = request.GET.get("email")
+
+    # print(request.get["username"])
+
+    conn = psycopg2.connect(database='mtaa', user='postgres',
+                            password='postgres',
+                            host='localhost', port="5432")
+    print("Database opened successfully")
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE users SET (user_name, user_passw, user_mail) = (\'{}\', \'{}\', \'{}\') "
+        "WHERE user_id={};".format(name, passw, mail, id))
+    conn.commit()
+    conn.close()
+    return HttpResponse("OK", status=200)
 
 
 @csrf_exempt
@@ -75,3 +103,5 @@ def handle_users(request, id):
         return get_user(request, id)
     elif request.method == 'DELETE':
         return delete_user(request, id)
+    else:
+        return HttpResponse("Bad request", status=400)
