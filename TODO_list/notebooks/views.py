@@ -4,6 +4,8 @@ import psycopg2
 # from psycopg2.extras import RealDictCursor
 import json
 from django.views.decorators.csrf import csrf_exempt
+import base64
+f = open("C:\\Users\\peter\\Desktop\\-3.jpg", "rb")
 
 
 def get_notebook(request, id, cur):
@@ -70,12 +72,25 @@ def create_notebook(request, cur, conn):
     return HttpResponse("Notebook succesfully created", status=201)
 
 
-def get_notebooks(request, cur):
+def get_notebooks(request, cur, conn):
     cur.execute("""SELECT row_to_json(row) FROM(SELECT * FROM public.notebooks) as row;""")
 
-    notebooks = cur.fetchall()
-    print(notebooks)
+    notebooks = []
+    notebook = cur.fetchone()
+    while(True):
+        if not notebook:
+            break
+
+        notebooks.append(notebook[0])
+        notebook = cur.fetchone()
+
+    #cur.execute("""UPDATE public.notebooks SET notebook_icon = {} where
+    #notebook_id = 10""".format(psycopg2.Binary(f.read())))
+    #conn.commit()
+    
+
     return JsonResponse(notebooks, safe=False, status=200)
+    #return HttpResponse(notebooks[0]['notebook_icon'])
 
 
 def get_note(request, id, note_id, cur):
@@ -118,6 +133,23 @@ def delete_note(request, id, note_id, cur, conn):
 
     return HttpResponse("Succesfully deleted", status=200)
 
+def get_icon(request, id, cur):
+    cur.execute("""SELECT notebook_icon FROM public.notebooks where notebook_id = {}""".format(id))
+    return HttpResponse(cur.fetchone()[0].tobytes(), content_type="image/jpeg")
+
+def post_icon(request, id, cur, conn):
+    body = json.loads(request.body)
+    data = base64.b64decode(body['base64'])
+
+    open("new.png", "wb").write(data)
+
+
+    cur.execute("""UPDATE public.notebooks SET notebook_icon = {} where
+    notebook_id = {}""".format(psycopg2.Binary(data), id))
+    conn.commit()
+
+    return HttpResponse(psycopg2.Binary(data) ,content_type="image/jpeg")
+
 
 @csrf_exempt
 def get_types(request):
@@ -128,7 +160,13 @@ def get_types(request):
 
     cur.execute("""SELECT row_to_json(row) FROM(SELECT * FROM public.notebook_types) as row;""")
 
-    types = cur.fetchall()
+    types = []
+    temp = cur.fetchone()
+    while(True):
+        if not temp:
+            break
+        types.append(temp[0])
+        temp = cur.fetchone()
 
     cur.close()
     conn.close()
@@ -145,7 +183,7 @@ def handle_notebooks(request):
     if request.method == 'POST':
         return create_notebook(request, cur, conn)
     elif request.method == 'GET':
-        return get_notebooks(request, cur)
+        return get_notebooks(request, cur, conn)
 
     cur.close()
     conn.close()
@@ -213,10 +251,26 @@ def handle_note(request, id):
     insert into public.notes (notebook_id, name, create_date, update_date,
 	note_type, note_content) values ({}, '{}', 
     CURRENT_DATE, CURRENT_DATE, {}, '{}');""".format(
-        body['notebook_id'], body['name'], body['note_type'], body['note_content']
+        id, body['name'], body['note_type'], body['note_content']
     ))
 
     conn.commit()
     cur.close()
     conn.close()
     return HttpResponse("Note succsesfully created", status=200)
+
+@csrf_exempt
+def handle_icons(request, id):
+    conn = psycopg2.connect(database='mtaa', user='postgres',
+                            password='postgres',
+                            host='localhost', port="5432")
+    cur = conn.cursor()
+
+    if request.method == "POST":
+        return post_icon(request, id, cur, conn)
+    elif request.method == "GET":
+        return get_icon(request, id, cur)
+
+    conn.commit()
+    cur.close()
+    conn.close()
