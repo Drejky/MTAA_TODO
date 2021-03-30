@@ -6,9 +6,6 @@ import json
 from django.views.decorators.csrf import csrf_exempt
 import base64
 
-# f = open("C:\\Users\\peter\\Desktop\\-3.jpg", "rb")
-
-
 def get_notebook(request, id, cur):
     cur.execute("""SELECT row_to_json(row) FROM(
         SELECT * FROM public.notebooks WHERE notebook_id = {}) row;""".format(id))

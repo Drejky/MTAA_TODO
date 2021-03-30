@@ -144,6 +144,23 @@ def delete_user(request, id):
         conn.close()
     return HttpResponse("OK", status=200)
 
+def put_user(request, id):
+    if get_user(request, id).status_code is not 200:
+        return HttpResponse("User not found", status=404)
+    else:
+        body = json.loads(request.body)
+        conn = psycopg2.connect(database='mtaa', user='postgres',
+                                password='postgres',
+                                host='localhost', port="5432")
+        print("Database opened successfully")
+        cur = conn.cursor()
+        cur.execute("""UPDATE public.users
+    SET user_name = '{}', user_passw = '{}', user_mail = '{}' WHERE user_id = {}""".format(
+        body['user_name'], body['user_passw'], body['user_mail'], id))
+        conn.commit()
+        conn.close()
+    return HttpResponse("OK", status=200)
+
 
 @csrf_exempt
 def create_user(request):
@@ -202,5 +219,7 @@ def handle_users(request, id):
         return get_user(request, id)
     elif request.method == 'DELETE':
         return delete_user(request, id)
+    elif request.method == 'PUT':
+        return put_user(request, id)
     else:
         return HttpResponse("Bad request", status=400)
