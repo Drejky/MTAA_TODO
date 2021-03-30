@@ -6,7 +6,6 @@ import psycopg2
 from django.views.decorators.csrf import csrf_exempt
 
 import jwt
-import sys
 
 from django.conf import settings
 
@@ -115,8 +114,6 @@ def dict_fetch_all(cursor):
 
 
 def get_user(request, id):
-    body = json.loads(request.body)
-    print(body)
     conn = psycopg2.connect(database='mtaa', user='postgres',
                             password='postgres',
                             host='localhost', port="5432")
