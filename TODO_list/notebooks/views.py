@@ -219,4 +219,4 @@ def handle_note(request, id):
     conn.commit()
     cur.close()
     conn.close()
-    return HttpResponse("Note succsesfully created", status=200)
+    return HttpResponse("Note successfully created", status=200)
