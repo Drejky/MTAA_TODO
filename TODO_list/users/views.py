@@ -167,9 +167,7 @@ def put_user(request, id):
 def create_user(request):
     if request.method == 'POST':
 
-        name = request.POST.get("username")
-        passw = request.POST.get("password")
-        mail = request.POST.get("email")
+        body = json.loads(request.body)
 
         conn = psycopg2.connect(database='mtaa', user='postgres',
                                 password='postgres',
@@ -177,8 +175,8 @@ def create_user(request):
         print("Database opened successfully")
         cur = conn.cursor()
         cur.execute(
-            "INSERT INTO users(user_name, user_passw, user_mail) VALUES (\'{}\', \'{}\', \'{}\');".format(name, passw,
-                                                                                                          mail))
+            "INSERT INTO users(user_name, user_passw, user_mail) VALUES (\'{}\', \'{}\', \'{}\') ;".format(body['username'], body['password'],
+                                                                                                          body['email']))
         conn.commit()
         conn.close()
         return HttpResponse("User created", status=201)
