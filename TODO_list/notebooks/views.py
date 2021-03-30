@@ -5,7 +5,8 @@ import psycopg2
 import json
 from django.views.decorators.csrf import csrf_exempt
 import base64
-f = open("C:\\Users\\peter\\Desktop\\-3.jpg", "rb")
+
+# f = open("C:\\Users\\peter\\Desktop\\-3.jpg", "rb")
 
 
 def get_notebook(request, id, cur):
@@ -79,15 +80,14 @@ def get_notebooks(request, cur, conn):
 
     notebooks = []
     notebook = cur.fetchone()
-    while(True):
+    while (True):
         if not notebook:
             break
 
         notebooks.append(notebook[0])
         notebook = cur.fetchone()
-    
-    return JsonResponse(notebooks, safe=False, status=200)
 
+    return JsonResponse(notebooks, safe=False, status=200)
 
 
 def get_note(request, id, note_id, cur):
@@ -130,9 +130,11 @@ def delete_note(request, id, note_id, cur, conn):
 
     return HttpResponse("Succesfully deleted", status=200)
 
+
 def get_icon(request, id, cur):
     cur.execute("""SELECT notebook_icon FROM public.notebooks where notebook_id = {}""".format(id))
     return HttpResponse(cur.fetchone()[0].tobytes(), content_type="image/jpeg")
+
 
 def post_icon(request, id, cur, conn):
     body = json.loads(request.body)
@@ -142,7 +144,8 @@ def post_icon(request, id, cur, conn):
     notebook_id = {}""".format(psycopg2.Binary(data), id))
     conn.commit()
 
-    return HttpResponse("Succesfully uploaded image" , status=200)
+    return HttpResponse("Succesfully uploaded image", status=200)
+
 
 def post_note(request, id, cur, conn):
     if not id.isnumeric():
@@ -159,20 +162,22 @@ def post_note(request, id, cur, conn):
 
     conn.commit()
 
+
 def get_notes(request, id, cur):
     cur.execute("""SELECT row_to_json(row) FROM(
         SELECT * FROM public.notes WHERE notebook_id = {}) row;""".format(id))
-    
+
     notes = []
     note = cur.fetchone()
-    while(True):
+    while (True):
         if not note:
             break
 
         notes.append(note[0])
         note = cur.fetchone()
-    
+
     return JsonResponse(notes, safe=False, status=200)
+
 
 @csrf_exempt
 def get_types(request):
@@ -185,7 +190,7 @@ def get_types(request):
 
     types = []
     temp = cur.fetchone()
-    while(True):
+    while (True):
         if not temp:
             break
         types.append(temp[0])
@@ -258,6 +263,7 @@ def handle_notes(request, id, note_id):
     cur.close()
     conn.close()
 
+
 @csrf_exempt
 def handle_note(request, id):
     conn = psycopg2.connect(database='mtaa', user='postgres',
@@ -272,10 +278,8 @@ def handle_note(request, id):
 
     cur.close()
     conn.close()
-<<<<<<< HEAD
-    return HttpResponse("Note successfully created", status=200)
-=======
     return HttpResponse("Note succsesfully created", status=200)
+
 
 @csrf_exempt
 def handle_icons(request, id):
@@ -292,4 +296,3 @@ def handle_icons(request, id):
     conn.commit()
     cur.close()
     conn.close()
->>>>>>> 94a562a63db6656ea25ca70364623391505c42aa
