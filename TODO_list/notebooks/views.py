@@ -1,10 +1,11 @@
 from django.shortcuts import render
 from django.http import HttpResponse, JsonResponse
 import psycopg2
-# from psycopg2.extras import RealDictCursor
 import json
 from django.views.decorators.csrf import csrf_exempt
 import base64
+import requests
+
 
 def get_notebook(request, id, cur):
     cur.execute("""SELECT row_to_json(row) FROM(
@@ -40,14 +41,18 @@ def put_notebook(request, id, cur, conn):
 
 
 def delete_notebook(request, id, cur, conn):
-    temp = get_notebook(request, id, cur)
-    if temp.status_code is not 200:
-        return temp
+    response = requests.post('http://127.0.0.1:8000/users/auth/valid', request.body)
+    print(response)
+    if response.status_code == 200:
+        temp = get_notebook(request, id, cur)
+        if temp.status_code is not 200:
+            return temp
 
-    cur.execute("""DELETE FROM public.notebooks WHERE notebook_id = {}""".format(id))
-    conn.commit()
+        cur.execute("""DELETE FROM public.notebooks WHERE notebook_id = {}""".format(id))
+        conn.commit()
 
-    return HttpResponse("Succesfully deleted", status=200)
+        return HttpResponse("Succesfully deleted", status=200)
+    return HttpResponse("Not veriefied", status=401)
 
 
 def create_notebook(request, cur, conn):
