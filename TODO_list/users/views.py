@@ -33,6 +33,7 @@ def login_request(request):
             json_data = dict_fetch_all(cursor)
             actual_json_data = json_data[0]  # dict
         refresh_token_content = {
+            "id": actual_json_data.get('user_id'),
             "username": actual_json_data.get('user_name'),
             "password": actual_json_data.get('user_passw'),
             "email": actual_json_data.get('user_mail')
@@ -43,6 +44,7 @@ def login_request(request):
 
         ts = int(time.time())  # adding issual_time and expire_time
         access_token_content = {
+            "id": actual_json_data.get('user_id'),
             "username": actual_json_data.get('username'),
             "password": actual_json_data.get('password'),
             "email": actual_json_data.get('email'),
@@ -56,6 +58,7 @@ def login_request(request):
 
         final_payload_x = {"user":
             {
+                "id": actual_json_data.get('user_id'),
                 "userName": actual_json_data.get('user_name'),
                 "email": actual_json_data.get('user_mail'),
                 "issual_time": int(ts),
