@@ -24,20 +24,24 @@ def login_request(request):
                                 host='localhost', port="5432")
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT exists (select * from users WHERE users.user_name = '" + name + "' AND  users.user_passw = '" + passw + "')")
+            "SELECT exists (select * from users WHERE (users.user_name = '" + name + "' AND  users.user_passw = '" + passw + "'))")
         # if matched it must return 1
-        if cursor.rowcount == 1:
+        if cursor.fetchone()[0]:
             # get the details of the user if matched
             cursor.execute("select * from users where users.user_name ='" + name + "'")
             secret_key = settings.SECRET_KEY  # get server's secret key from settings.py
             json_data = dict_fetch_all(cursor)
             actual_json_data = json_data[0]  # dict
+        else:
+            return HttpResponse("Nope", status= 404)
+            
         refresh_token_content = {
             "id": actual_json_data.get('user_id'),
             "username": actual_json_data.get('user_name'),
             "password": actual_json_data.get('user_passw'),
             "email": actual_json_data.get('user_mail')
         }
+
 
         refresh_token = {'refreshToken': jwt.encode(refresh_token_content, secret_key)}
         actual_refresh_token = refresh_token.get('refreshToken')

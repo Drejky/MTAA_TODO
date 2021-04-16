@@ -298,3 +298,28 @@ def handle_icons(request, id):
     conn.commit()
     cur.close()
     conn.close()
+
+@csrf_exempt
+def handle_userNotebooks(request, id):
+    conn = psycopg2.connect(database='mtaa', user='postgres',
+                            password='postgres',
+                            host='localhost', port="5432")
+    cur = conn.cursor()
+
+    cur.execute("""SELECT row_to_json(row) FROM(SELECT notebook_id, creator_id, creator_date,
+    notebook_type, notebook_name, label, notebook_color, update_date, collaborator_id 
+    FROM public.notebooks WHERE creator_id = {}) as row;""".format(id))
+
+    notebooks = []
+    notebook = cur.fetchone()
+    while (True):
+        if not notebook:
+            break
+
+        notebooks.append(notebook[0])
+        notebook = cur.fetchone()
+        
+    cur.close()
+    conn.close()
+
+    return JsonResponse(notebooks, safe=False, status=200)
