@@ -33,15 +33,14 @@ def login_request(request):
             json_data = dict_fetch_all(cursor)
             actual_json_data = json_data[0]  # dict
         else:
-            return HttpResponse("Nope", status= 404)
-            
+            return HttpResponse("Nope", status=404)
+
         refresh_token_content = {
             "id": actual_json_data.get('user_id'),
             "username": actual_json_data.get('user_name'),
             "password": actual_json_data.get('user_passw'),
             "email": actual_json_data.get('user_mail')
         }
-
 
         refresh_token = {'refreshToken': jwt.encode(refresh_token_content, secret_key)}
         actual_refresh_token = refresh_token.get('refreshToken')
@@ -77,6 +76,8 @@ def login_request(request):
     return HttpResponse("ahoj")
 
 
+# TODO treba vyriesit overovanie tokenu (t.j. nie len validitu v case, ale aj aby s tokenom usera a neslo mazat
+#  nieco usera b)
 @csrf_exempt
 def check_if_token_is_valid(request):
     if request.method == 'POST':
@@ -182,8 +183,9 @@ def create_user(request):
         print("Database opened successfully")
         cur = conn.cursor()
         cur.execute(
-            "INSERT INTO users(user_name, user_passw, user_mail) VALUES (\'{}\', \'{}\', \'{}\') ;".format(body['username'], body['password'],
-                                                                                                          body['email']))
+            "INSERT INTO users(user_name, user_passw, user_mail) VALUES (\'{}\', \'{}\', \'{}\') ;".format(
+                body['username'], body['password'],
+                body['email']))
         conn.commit()
         conn.close()
         return HttpResponse("User created", status=201)
