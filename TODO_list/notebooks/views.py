@@ -27,14 +27,12 @@ def put_notebook(request, id, cur, conn):
         body['label'] = 'null'
     if not body['collaborator_id']:
         body['collaborator_id'] = 'null'
-    if not body['notebook_icon']:
-        body['notebook_icon'] = 'null'
 
     cur.execute("""UPDATE public.notebooks
     SET notebook_name = '{}', label = '{}', 
-    notebook_color = '{}', collaborator_id = {}, notebook_icon = {}, update_date = CURRENT_DATE
+    notebook_color = '{}', collaborator_id = {}, update_date = CURRENT_DATE
     WHERE notebook_id = {};""".format(body['notebook_name'], body['label'],
-                                      body['notebook_color'], body['collaborator_id'], body['notebook_icon'], id))
+                                      body['notebook_color'], body['collaborator_id'], id))
     conn.commit()
 
     return get_notebook(request, id, cur)
@@ -61,18 +59,26 @@ def create_notebook(request, cur, conn):
         body['label'] = 'null'
     if not body['collaborator_id']:
         body['collaborator_id'] = 'null'
-    if not body['notebook_icon']:
-        body['notebook_icon'] = 'null'
 
-    cur.execute("""INSERT INTO public.notebooks (creator_id, creator_date, notebook_type,
-    notebook_name, label, notebook_color, update_date, collaborator_id,
-    notebook_icon) VALUES ({}, CURRENT_DATE, {}, '{}', '{}', '{}',
-    CURRENT_DATE, {}, '{}');""".format(body['creator_id'], body['notebook_type'],
+    cur.execute("""
+    INSERT INTO public.notebooks (creator_id, creator_date, notebook_type,
+    notebook_name, label, notebook_color, update_date, collaborator_id) 
+    VALUES ({}, CURRENT_DATE, {}, '{}', '{}', '{}',
+    CURRENT_DATE, {}) 
+    RETURNING notebook_id;""".format(body['creator_id'], body['notebook_type'],
                                        body['notebook_name'], body['label'], body['notebook_color'],
-                                       body['collaborator_id'], body['notebook_icon']))
+                                       body['collaborator_id']))
+    leID = cur.fetchone()[0]
+
+    cur.execute("""SELECT row_to_json(row) FROM(
+        SELECT notebook_id, creator_id, creator_date,
+    notebook_type, notebook_name, label, notebook_color, update_date, collaborator_id 
+     FROM public.notebooks WHERE notebook_id = {}) row;""".format(leID))
+    notebook = cur.fetchone()
+
     conn.commit()
 
-    return HttpResponse("Notebook succesfully created", status=201)
+    return JsonResponse(notebook[0], safe=False, status=201)
 
 
 def get_notebooks(request, cur, conn):
@@ -318,7 +324,32 @@ def handle_userNotebooks(request, id):
 
         notebooks.append(notebook[0])
         notebook = cur.fetchone()
-        
+
+    cur.close()
+    conn.close()
+
+    return JsonResponse(notebooks, safe=False, status=200)
+
+@csrf_exempt
+def handle_NotebookNotes(request, id):
+    conn = psycopg2.connect(database='mtaa', user='postgres',
+                            password='postgres',
+                            host='localhost', port="5432")
+    cur = conn.cursor()
+
+    cur.execute("""SELECT row_to_json(row) FROM(SELECT notebook_id, creator_id, creator_date,
+    notebook_type, notebook_name, label, notebook_color, update_date, collaborator_id 
+    FROM public.notebooks WHERE creator_id = {}) as row;""".format(id))
+
+    notebooks = []
+    notebook = cur.fetchone()
+    while (True):
+        if not notebook:
+            break
+
+        notebooks.append(notebook[0])
+        notebook = cur.fetchone()
+
     cur.close()
     conn.close()
 
