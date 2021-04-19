@@ -160,15 +160,22 @@ def post_note(request, id, cur, conn):
         return HttpResponse("Incorrect id", status=404)
 
     body = json.loads(request.body)
-
+    
     cur.execute("""
     insert into public.notes (notebook_id, name, create_date, update_date,
 	note_type, note_content) values ({}, '{}', 
-    CURRENT_DATE, CURRENT_DATE, {}, '{}');""".format(
+    CURRENT_DATE, CURRENT_DATE, {}, '{}') returning note_id;""".format(
         id, body['name'], body['note_type'], body['note_content']
     ))
 
     conn.commit()
+    leID = cur.fetchone()[0]
+
+    cur.execute("""SELECT row_to_json(row) FROM(
+        SELECT * FROM public.notes WHERE note_id = {}) row;""".format(leID))
+    resp = cur.fetchone()[0]
+
+    return JsonResponse(resp , status=201)
 
 
 def get_notes(request, id, cur):
