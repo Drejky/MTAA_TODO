@@ -321,7 +321,7 @@ def handle_userNotebooks(request, id):
 
     cur.execute("""SELECT row_to_json(row) FROM(SELECT notebook_id, creator_id, creator_date,
     notebook_type, notebook_name, label, notebook_color, update_date, collaborator_id 
-    FROM public.notebooks WHERE creator_id = {}) as row;""".format(id))
+    FROM public.notebooks WHERE creator_id = {} OR collaborator_id = {}) as row;""".format(id, id))
 
     notebooks = []
     notebook = cur.fetchone()

@@ -206,3 +206,23 @@ def handle_users(request, id):
         return put_user(request, id)
     else:
         return HttpResponse("Bad request", status=400)
+
+@csrf_exempt
+def handle_userByName(request):
+    name = request.GET.get('name', '')
+    print(name)
+
+    conn = psycopg2.connect(database='mtaa', user='postgres',
+                            password='postgres',
+                            host='localhost', port="5432")
+    print("Database opened successfully")
+    cur = conn.cursor()
+    cur.execute("SELECT * FROM users WHERE user_name='{}';".format(name))
+    rows = dict_fetch_all(cur)
+    conn.commit()
+    conn.close()
+
+    if len(rows) == 0:  # if there is not such a user (by id)
+        return HttpResponse("User not found", status=404)
+
+    return HttpResponse(rows[0]['user_id'], status=200)
